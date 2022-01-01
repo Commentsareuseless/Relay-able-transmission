@@ -1,1 +1,0 @@
-/usr/bin/cc   -rdynamic CMakeFiles/SCPWithRelay.dir/main.c.o CMakeFiles/SCPWithRelay.dir/FileReader.c.o  -o SCPWithRelay 

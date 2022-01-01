@@ -1,3 +1,0 @@
-/mnt/d/SzykołaMS2/SiskIsMajPaszyn/projekcix/src/build/CMakeFiles/rebuild_cache.dir
-/mnt/d/SzykołaMS2/SiskIsMajPaszyn/projekcix/src/build/CMakeFiles/edit_cache.dir
-/mnt/d/SzykołaMS2/SiskIsMajPaszyn/projekcix/src/build/CMakeFiles/SCPWithRelay.dir

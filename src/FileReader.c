@@ -9,7 +9,7 @@ int InitFileReader(const char* file, FILE* handle)
     if(NULL == fileHandle)
     {
         fprintf(stderr, "ERROR:\t Could not open file, (does not exist)\n");
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -21,10 +21,10 @@ int ReadTxtFile(char* out_data, size_t size, FILE* handle)
     if(NULL == handle)
     {
         fprintf(stderr, "ERROR:\t Invalid file handle!!!\n");
-        return 1;
+        return -1;
     }
 
-    bytesRead = fread(out_data, 1, size, handle);
+    bytesRead = fread(out_data, size, 1, handle);
 
     if (bytesRead != size)
     {
@@ -35,6 +35,7 @@ int ReadTxtFile(char* out_data, size_t size, FILE* handle)
         }
         // Jakiś błąd, nie fajnie :(
         fprintf(stderr, "ERROR:\t Sth went wrong during reading of file :(\n");
-        return 1;
+        return -1;
     }
+    return bytesRead;
 }

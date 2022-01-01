@@ -13,12 +13,13 @@
 1. Przeczytać argumenty z cl
     a. IP odbiorcy
     b. plik do wysłania
-    Żeby ciężej było zepsuć, ip będzie poprzedzone opcją -ip a plik -f
+    Żeby ciężej było zepsuć, ip będzie poprzedzone opcją -i a plik -f
 
 
 */
 
-static FILE* fileToRead;
+
+static FileData fd = {0};
 static unsigned recPort = 5050;
 static struct sockaddr_in addressOfRecipient;
 
@@ -53,12 +54,10 @@ static void ParseCommandLine(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-    FILE* fileToRead = NULL;
     struct sockaddr_in recAddr;
 
-
     ParseCommandLine(argc, argv)
-    InitFileReader("TegoPlikuNieMa", fileToRead);
+    InitFileReader("TegoPlikuNieMa", fd.handle);
 
     printf("Dziala lul\n");
     return 0;
