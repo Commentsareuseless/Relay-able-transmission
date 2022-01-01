@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-#include "FileReader.h"
+#include "FileHandler.h"
 #include "ClParser.h"
 
 /*
@@ -36,16 +36,17 @@ int main(int argc, char** argv)
     switch (clArgs.typeOfService)
     {
     case SEND:
-        InitFileReader(clArgs.fileName, fd.handle);
+        InitFileHandler(clArgs.fileName, fd.handle, FH_MODE_READ);
         // Send file
         break;
 
     case RECEIVE:
-        // Wait for connection
-        // Create file to write received data
+        // Wait for connection (First received string is file name)
+        memcpy(clArgs.fileName, "plick.txt", sizeof("plick.txt"));
+        InitFileHandler(clArgs.fileName, fd.handle, FH_MODE_WRITE);
         break;
     default:
-        fprintf(stdout. "Sth went wrong :(, invalid type of service\n");
+        fprintf(stdout, "Sth went wrong :(, invalid type of service\n");
         return -1;
     }
 

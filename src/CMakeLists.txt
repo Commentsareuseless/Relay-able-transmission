@@ -4,8 +4,8 @@ project("SCPWithRelay")
 
 add_executable(${PROJECT_NAME}
    "main.c"
-   "FileReader.c"
-   "FileReader.h"
+   "FileHandler.c"
+   "FileHandler.h"
    "ClParser.c"
    "ClParser.h"
 )
