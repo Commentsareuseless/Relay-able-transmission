@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-project("SCPWithRelay")
+project("RelayableTransmitter")
 
 add_executable(${PROJECT_NAME}
    "main.c"
