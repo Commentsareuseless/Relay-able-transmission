@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 
 #include "FileReader.h"
+#include "ClParser.h"
 
 /*
 1. Przeczytać argumenty z cl
@@ -18,46 +19,37 @@
 
 */
 
-
+static ClArgs clArgs = {0};
 static FileData fd = {0};
 static unsigned recPort = 5050;
 static struct sockaddr_in addressOfRecipient;
-
-static void ParseCommandLine(int argc, char** argv)
-{
-    if(5 != argc)
-    {
-        fprintf(stderr, "ERROR:\t Invalid arguments\n"
-                        "Usage: -i IpOfRecipient -f FileToTransfer\n");
-        return;
-    }
-
-    for (int i = 1; i < argc; ++i)
-    {
-        if (strncmp(argv[i], "-i", sizeof("-i")))
-        {
-            
-        }
-
-        if (strncmp(argv[i], "-f", sizeof("-f")))
-        {
-            
-        }
-
-    }
-
-    addressOfRecipient.sin_family       = AF_INET; // IPv4
-    addressOfRecipient.sin_addr.s_addr  = INADDR_ANY;
-    addressOfRecipient.sin_port         = htons(recPort);
-}
-
 
 int main(int argc, char** argv)
 {
     struct sockaddr_in recAddr;
 
-    ParseCommandLine(argc, argv)
-    InitFileReader("TegoPlikuNieMa", fd.handle);
+    if (0 > ParseCommandLine(argc, argv, &clArgs))
+    {
+        exit(1);
+    }
+
+    switch (clArgs.typeOfService)
+    {
+    case SEND:
+        InitFileReader(clArgs.fileName, fd.handle);
+        // Send file
+        break;
+
+    case RECEIVE:
+        // Wait for connection
+        // Create file to write received data
+        break;
+    default:
+        fprintf(stdout. "Sth went wrong :(, invalid type of service\n");
+        return -1;
+    }
+
+    // Cleanup
 
     printf("Dziala lul\n");
     return 0;
