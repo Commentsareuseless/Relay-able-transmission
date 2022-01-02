@@ -30,7 +30,7 @@ static inline void ConvertIpToBin(const char* strAddr, in_addr_t* binAddr)
 {
     int ret = 0;
 
-    if (NULL == strAddr)
+    if ('\0' == strAddr[0])
     {
         *binAddr = INADDR_ANY;
         return;
@@ -59,11 +59,18 @@ static inline int SendData(const char* buff, size_t buffSize)
     return ret;
 }
 
+static void Cleanup(FILE* handle, int sock)
+{
+    close(sock);
+    fclose(handle);
+}
+
 int InitNetHandler(int tos, const char* ipAddr, long port)
 {
     in_addr_t binAddress = 0;
 
     ConvertIpToBin(ipAddr, &binAddress);
+    ToS = tos;
 
     // Creating socket file descriptor
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -166,7 +173,7 @@ int SendFile(const char* fileName)
         progress += ret;
     } while (ret);
 
-    fclose(file2Send);
+    Cleanup(file2Send, sockfd);
     return 0;
     /*
         Open file
@@ -187,6 +194,8 @@ int SendFile(const char* fileName)
 
 int WaitForTransmission()
 {
+    FILE* recvdFile = NULL;
+
     if(ToS != NH_TOS_RECEIVER)
     {
         fprintf(stderr, "ERROR:\tCannot receive files in transmitter mode\n");
@@ -202,6 +211,6 @@ int WaitForTransmission()
             write data to file
         }
     */
-
-    return -1;
+    Cleanup(recvdFile, sockfd);
+    return 0;
 }

@@ -27,6 +27,7 @@ int ParseCommandLine(int argc, char** argv, ClArgs* out_args)
         {
             out_args->port = atol(argv[2]);
             out_args->typeOfService = NH_TOS_RECEIVER;
+            memset(out_args->ipv4Address, 0, sizeof(out_args->ipv4Address));
             return 0;
         }
         return PrintUsageAndFail();

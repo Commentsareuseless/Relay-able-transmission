@@ -38,7 +38,8 @@ int main(int argc, char** argv)
     elapsedTime = (stop.tv_sec * 1000 + stop.tv_usec / 1000) -
         (start.tv_sec * 1000 + start.tv_usec / 1000);
 
-    printf( "=============================="
-            "\tFinished in: %ld ms\n", elapsedTime);
+    printf( "======"
+            " Finished in: %ld ms "
+            "======\n", elapsedTime);
     return 0;
 }
