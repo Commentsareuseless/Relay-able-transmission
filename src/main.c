@@ -1,57 +1,44 @@
-#include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#include <stdio.h>
 
-#include "FileHandler.h"
 #include "ClParser.h"
+#include "NetHandler.h"
 
-/*
-1. Przeczytać argumenty z cl
-    a. IP odbiorcy
-    b. plik do wysłania
-    Żeby ciężej było zepsuć, ip będzie poprzedzone opcją -i a plik -f
-
-
-*/
-
-static ClArgs clArgs = {0};
-static FileData fd = {0};
-static unsigned recPort = 5050;
-static struct sockaddr_in addressOfRecipient;
 
 int main(int argc, char** argv)
 {
-    struct sockaddr_in recAddr;
+    long elapsedTime = 0;;
+    ClArgs clArgs = {0};
+    struct timeval start = {0}, stop = {0};
+
+    gettimeofday(&start, NULL);
 
     if (0 > ParseCommandLine(argc, argv, &clArgs))
     {
         exit(1);
     }
 
+    InitNetHandler(clArgs.typeOfService, clArgs.ipv4Address, clArgs.port);
+
     switch (clArgs.typeOfService)
     {
-    case SEND:
-        InitFileHandler(clArgs.fileName, fd.handle, FH_MODE_READ);
-        // Send file
+    case NH_TOS_TRANSMITTER:
+        if (0 > SendFile(clArgs.fileName)) {return -1;}
         break;
 
-    case RECEIVE:
-        // Wait for connection (First received string is file name)
-        memcpy(clArgs.fileName, "plick.txt", sizeof("plick.txt"));
-        InitFileHandler(clArgs.fileName, fd.handle, FH_MODE_WRITE);
+    case NH_TOS_RECEIVER:
+        if(0 > WaitForTransmission()) {return -1;}
         break;
-    default:
-        fprintf(stdout, "Sth went wrong :(, invalid type of service\n");
-        return -1;
     }
 
-    // Cleanup
+    gettimeofday(&stop, NULL);
 
-    printf("Dziala lul\n");
+    elapsedTime = (stop.tv_sec * 1000 + stop.tv_usec / 1000) -
+        (start.tv_sec * 1000 + start.tv_usec / 1000);
+
+    printf( "=============================="
+            "\tFinished in: %ld ms\n", elapsedTime);
     return 0;
 }

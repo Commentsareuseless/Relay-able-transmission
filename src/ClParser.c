@@ -26,7 +26,7 @@ int ParseCommandLine(int argc, char** argv, ClArgs* out_args)
         if (0 == strncmp(argv[1], "-l", sizeof("-l")))
         {
             out_args->port = atol(argv[2]);
-            out_args->typeOfService = RECEIVE;
+            out_args->typeOfService = NH_TOS_RECEIVER;
             return 0;
         }
         return PrintUsageAndFail();
@@ -53,7 +53,7 @@ int ParseCommandLine(int argc, char** argv, ClArgs* out_args)
         }
         return PrintUsageAndFail();
     }
-    out_args->typeOfService = SEND;
+    out_args->typeOfService = NH_TOS_TRANSMITTER;
 
     return 0;
 }

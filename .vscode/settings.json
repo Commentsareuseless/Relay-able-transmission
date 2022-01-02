@@ -1,6 +1,7 @@
 {
     "cmake.configureOnOpen": false,
     "files.associations": {
-        "filereader.h": "c"
+        "filereader.h": "c",
+        "filehandler.h": "c"
     }
 }

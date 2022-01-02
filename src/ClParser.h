@@ -1,10 +1,6 @@
 #pragma once
 
-enum TypeOfServive
-{
-    SEND,
-    RECEIVE
-};
+#include "NetHandler.h"
 
 struct _ClArgs
 {

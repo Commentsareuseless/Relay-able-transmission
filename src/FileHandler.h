@@ -5,11 +5,13 @@
 #define FH_MODE_READ    0
 #define FH_MODE_WRITE   1
 
+#define READ_BUFF_SIZE 256
+
 struct _FileData
 {
     char* name;
     FILE* handle;
-    char raedBuff[256];
+    char raedBuff[READ_BUFF_SIZE];
 };
 typedef struct _FileData FileData;
 

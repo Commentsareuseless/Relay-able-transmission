@@ -8,4 +8,19 @@ add_executable(${PROJECT_NAME}
    "FileHandler.h"
    "ClParser.c"
    "ClParser.h"
+   "NetHandler.h"
+   "NetHandler.c"
 )
+
+if (CMAKE_COMPILER_IS_GNUCC)
+   target_compile_options(${PROJECT_NAME} PRIVATE
+      "-Wall"
+      "-Wextra"
+      "-Wpedantic"
+      "-Wshadow"
+   )
+else()
+   target_compile_options(${PROJECT_NAME} PRIVATE
+      "-Wall"
+   )
+endif()
