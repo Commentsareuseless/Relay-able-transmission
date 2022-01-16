@@ -31,3 +31,10 @@ int SendFile(const char* fileName);
  * @return [0] - on success, [-1] - on error
  */
 int WaitForTransmission();
+
+/**
+ * @brief For summary, this should not be called before SendFile()
+ * 
+ * @return Size in bytes of sent file
+ */
+unsigned long GetFinalNumOfBytesSent();

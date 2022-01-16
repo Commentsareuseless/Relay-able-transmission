@@ -38,8 +38,9 @@ int main(int argc, char** argv)
     elapsedTime = (stop.tv_sec * 1000 + stop.tv_usec / 1000) -
         (start.tv_sec * 1000 + start.tv_usec / 1000);
 
-    printf( "======"
+    printf( "\n======"
             " Finished in: %ld ms "
             "======\n", elapsedTime);
+    printf("=== Bandwidth: %fB/s ===\n", ((double)GetFinalNumOfBytesSent()/(double)elapsedTime)*1000.0);
     return 0;
 }

@@ -199,7 +199,8 @@ int SendFile(const char* fileName)
 
     do
     {
-        ret = ReadTxtFile(sendBuff, sizeof(sendBuff), file2Send);
+        unsigned long fileBytes = 0;
+        fileBytes = ReadTxtFile(sendBuff, sizeof(sendBuff), file2Send);
         if (0 > ret)
         {
             perror("ERROR:\tError while reading file");
@@ -209,7 +210,8 @@ int SendFile(const char* fileName)
         ret = SendData(sendBuff, sizeof(sendBuff));
         if (ret < 0) {return -1;}
 
-        progress += ret;
+        progress += fileBytes;
+        fprintf(stdout, "INFO:\tSent %lu/%lu bytes\n", progress, progressMax);
     } while (progress < progressMax);
 
     Cleanup(file2Send, sockfd);
@@ -285,4 +287,9 @@ int WaitForTransmission()
 
     Cleanup(recvdFile, sockfd);
     return 0;
+}
+
+unsigned long GetFinalNumOfBytesSent()
+{
+    return progressMax;
 }

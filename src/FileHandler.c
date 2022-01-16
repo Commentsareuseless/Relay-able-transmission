@@ -38,14 +38,13 @@ int ReadTxtFile(char* out_data, size_t size, FILE* handle)
     }
 
     bytesRead = fread(out_data, 1, size, handle);
-    printf("INFO:\tRead: %lu bytes\n", bytesRead);
 
     if (bytesRead != size)
     {
         if(feof(handle))
         {
             // Osiągnęliśmy koniec pliku, jest git
-            return 0;
+            return bytesRead;
         }
         // Jakiś błąd, nie fajnie :(
         fprintf(stderr, "ERROR:\t Sth went wrong during reading of a file :(\n");
