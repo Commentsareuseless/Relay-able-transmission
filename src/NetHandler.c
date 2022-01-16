@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <errno.h>
 
 #include "FileHandler.h"
 
@@ -15,6 +16,8 @@
 #else
 #   define SERVER_ADDRESS INADDR_ANY
 #endif
+
+#define LOCALHOST_ADDRESS "127.0.0.1"
 
 static int ToS = -1;
 
@@ -25,12 +28,19 @@ static struct sockaddr_in sendAddr;
 static int sockfd = 0;
 static unsigned long progress = 0;
 static unsigned long progressMax = 0;
+static unsigned long maxRecvdBytes = 0;
+
+static void PrintErrnoMessage(unsigned errnoVal)
+{
+    printf("ERROR:\t%s\n", strerror(errnoVal));
+}
 
 static inline void ConvertIpToBin(const char* strAddr, in_addr_t* binAddr)
 {
     int ret = 0;
+    printf("INFO:\tGot ip addr = %s<-\n", strAddr);
 
-    if ('\0' == strAddr[0])
+    if (0 == strncmp(strAddr, LOCALHOST_ADDRESS, sizeof(LOCALHOST_ADDRESS)))
     {
         *binAddr = INADDR_ANY;
         return;
@@ -49,13 +59,34 @@ static inline void ConvertIpToBin(const char* strAddr, in_addr_t* binAddr)
 static inline int SendData(const char* buff, size_t buffSize)
 {
     ssize_t ret = -1;
-    ret = sendto(sockfd, (const char *)buff, buffSize, MSG_CONFIRM,
-            (const struct sockaddr *) &recvAddr, sizeof(recvAddr));
+    // fprintf(stdout, "INFO:\tSending message: %s\n", buff);
+    ret = sendto(sockfd, (const char *)buff, buffSize, 0,
+            (const struct sockaddr *) &sendAddr, sizeof(sendAddr));
     if (ret < 0)
     {
+        ret = errno;
+        PrintErrnoMessage(ret);
         fprintf(stderr, "Sending error after %ld bytes\n", progress);
         return -1;
     }
+    return ret;
+}
+
+static int RecvData(char* buff, size_t buffSize)
+{
+    ssize_t ret = -1;
+    unsigned recvBytes = 0;
+
+    ret = recvfrom(sockfd, buff, buffSize, MSG_WAITALL,
+        (struct sockaddr *)&recvAddr, &recvBytes);
+
+    if(ret < 0)
+    {
+        perror("Error during recvform :(");
+        return -1;
+    }
+    buff[ret] = '\0';
+
     return ret;
 }
 
@@ -126,13 +157,17 @@ int SendFile(const char* fileName)
         return -1;
     }
 
-    InitFileHandler(fileName, file2Send, FH_MODE_READ);
-
+    file2Send = InitFileHandler(fileName, FH_MODE_READ);
+    if(file2Send != NULL)
+    {
+        fprintf(stdout, "INFO:\tInitialized FileHandler, filename: %s\n", fileName);
+    }
     /* Check file size (we assume processing
        only text files so this tells file size in bytes) */
     fseek(file2Send, 0, SEEK_END);
     fileSize = ftell(file2Send);
     progressMax = fileSize;
+    fseek(file2Send, 0, SEEK_SET);
 
     if (fileSize <= 0)
     {
@@ -140,11 +175,15 @@ int SendFile(const char* fileName)
         return -1;
     }
 
+    fprintf(stdout, "INFO:\tSending file size is: %ld bytes\n", fileSize);
+
     /* First transmission - send fileName */
+    printf("Sent first message\n");
     strncpy(sendBuff, fileName, strlen(fileName));
     ret = SendData(sendBuff, sizeof(sendBuff));
     if (ret < 0) {return -1;}
 
+    /* Second transmission, size of sending file */
     memset(sendBuff, 0, sizeof(sendBuff));
     ret = snprintf(sendBuff, sizeof(sendBuff), "%ld", fileSize);
     if (ret <= 0)
@@ -171,7 +210,7 @@ int SendFile(const char* fileName)
         if (ret < 0) {return -1;}
 
         progress += ret;
-    } while (ret);
+    } while (progress < progressMax);
 
     Cleanup(file2Send, sockfd);
     return 0;
@@ -195,6 +234,10 @@ int SendFile(const char* fileName)
 int WaitForTransmission()
 {
     FILE* recvdFile = NULL;
+    char filename[32] = {0};
+    char recvBuff[128] = {0};
+    int ret = -1;
+    unsigned long bytesToGo = 0;
 
     if(ToS != NH_TOS_RECEIVER)
     {
@@ -202,15 +245,44 @@ int WaitForTransmission()
         return -1;
     }
 
-    /*
-        recvfrom(client)
-        create file with name received from first transmission
-        save received fileSize
-        while(received fileSize bytes)
+    // First transmission, receive filename
+    fprintf(stdout, "INFO:\tInitialized net handler, waiting for transmission...\n");
+    ret = RecvData(recvBuff, sizeof(recvBuff));
+
+    if (ret < 0)
+    {
+        fprintf(stderr, "ERROR:\tCannot receive filename, aborting...\n");
+        return -1;
+    }
+    memcpy(filename, recvBuff, ret);
+
+    // Second transmission, receive file size
+    ret = RecvData(recvBuff, sizeof(recvBuff));
+    maxRecvdBytes = atol(recvBuff);
+    bytesToGo = maxRecvdBytes;
+
+    fprintf(stdout, "INFO:\tReceivedd transmission request, file: %s of size: %ld\n", filename, maxRecvdBytes);
+    recvdFile = InitFileHandler(filename, FH_MODE_WRITE);
+
+    do
+    {
+        ret = RecvData(recvBuff, sizeof(recvBuff));
+        if (ret < 0)
         {
-            write data to file
+            fprintf(stderr, "ERROR:\tReceiving filed, aborting...\n");
+            return -1;
         }
-    */
+
+        ret = WriteTxtFile(recvBuff, ret, recvdFile);
+        if (ret < 0)
+        {
+            fprintf(stderr, "ERROR:\tWriting file error, aborting...\n");
+            return -1;
+        }
+        bytesToGo -= ret;
+
+    } while (bytesToGo > 0);
+
     Cleanup(recvdFile, sockfd);
     return 0;
 }

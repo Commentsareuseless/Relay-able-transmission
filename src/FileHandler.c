@@ -1,7 +1,9 @@
 #include "FileHandler.h"
 
-int InitFileHandler(const char* file, FILE* handle, int mode)
+FILE* InitFileHandler(const char* file, int mode)
 {
+    FILE* handle = NULL;
+
     switch (mode)
     {
     case FH_MODE_READ:
@@ -9,19 +11,20 @@ int InitFileHandler(const char* file, FILE* handle, int mode)
         break;
 
     case FH_MODE_WRITE:
-        handle = fopen(file, "w");
+        handle = fopen(file, "w+");
         break;
     default:
         fprintf(stderr, "ERROR:\t Unsupported mode\n");
-        return -1;
+        return NULL;
     }
 
     if(NULL == handle)
     {
         fprintf(stderr, "ERROR:\t Could not initialize file\n");
-        return -1;
+        return NULL;
     }
-    return 0;
+
+    return handle;
 }
 
 int ReadTxtFile(char* out_data, size_t size, FILE* handle)
@@ -34,7 +37,8 @@ int ReadTxtFile(char* out_data, size_t size, FILE* handle)
         return -1;
     }
 
-    bytesRead = fread(out_data, size, 1, handle);
+    bytesRead = fread(out_data, 1, size, handle);
+    printf("INFO:\tRead: %lu bytes\n", bytesRead);
 
     if (bytesRead != size)
     {

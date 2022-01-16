@@ -22,7 +22,7 @@ typedef struct _FileData FileData;
  * @return [0] - on success
  *         [-1] - on error (inexistent file)
  */
-int InitFileHandler(const char* file, FILE* handle, int mode);
+FILE* InitFileHandler(const char* file, int mode);
 
 /**
  * @brief This function is supposed to be called in loop
