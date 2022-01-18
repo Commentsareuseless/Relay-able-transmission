@@ -5,7 +5,7 @@
 #define FH_MODE_READ    0
 #define FH_MODE_WRITE   1
 
-#define READ_BUFF_SIZE 256
+#define READ_BUFF_SIZE 512
 
 struct _FileData
 {

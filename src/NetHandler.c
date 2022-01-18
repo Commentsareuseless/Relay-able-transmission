@@ -18,6 +18,7 @@
 #endif
 
 #define LOCALHOST_ADDRESS "127.0.0.1"
+#define ACK_MESSAGE "ACK"
 
 static int ToS = -1;
 
@@ -38,9 +39,9 @@ static void PrintErrnoMessage(unsigned errnoVal)
 static inline void ConvertIpToBin(const char* strAddr, in_addr_t* binAddr)
 {
     int ret = 0;
-    printf("INFO:\tGot ip addr = %s<-\n", strAddr);
 
-    if (0 == strncmp(strAddr, LOCALHOST_ADDRESS, sizeof(LOCALHOST_ADDRESS)))
+    if (0 == strncmp(strAddr, LOCALHOST_ADDRESS, sizeof(LOCALHOST_ADDRESS)) ||
+        '\0' == strAddr[0])
     {
         *binAddr = INADDR_ANY;
         return;
@@ -86,6 +87,48 @@ static int RecvData(char* buff, size_t buffSize)
         return -1;
     }
     buff[ret] = '\0';
+
+    return ret;
+}
+
+static void SendACK()
+{
+    ssize_t ret = -1;
+    const char message[] = ACK_MESSAGE;
+
+    ret = sendto(sockfd, (const char *)message, sizeof(message), 0,
+            (const struct sockaddr *) &recvAddr, sizeof(recvAddr));
+    if (ret < 0)
+    {
+        ret = errno;
+        PrintErrnoMessage(ret);
+        fprintf(stderr, "Sending error while sending ACK\n");
+        return;
+    }
+}
+
+static int RecvACK()
+{
+    ssize_t ret = -1;
+    unsigned recvBytes = 0;
+    const char message[] = ACK_MESSAGE;
+    char messBuff[sizeof(ACK_MESSAGE)] = {0};
+
+    ret = recvfrom(sockfd, messBuff, sizeof(messBuff), MSG_WAITALL,
+        (struct sockaddr *)&sendAddr, &recvBytes);
+
+    if(ret < 0)
+    {
+        perror("Error during recvform :(");
+        return -1;
+    }
+    messBuff[ret] = '\0';
+
+    if (0 != strncmp(message, messBuff, sizeof(messBuff)))
+    {
+        fprintf(stderr, "ERROR:\tError while receiving ACK\n");
+        return -1;
+    }
 
     return ret;
 }
@@ -150,6 +193,8 @@ int SendFile(const char* fileName)
     long fileSize = -1;
     char sendBuff[READ_BUFF_SIZE] = {0};
     FILE* file2Send = NULL;
+    unsigned long fileBytes = 0;
+    unsigned sendNo = 0;
 
     if(ToS != NH_TOS_TRANSMITTER)
     {
@@ -199,7 +244,6 @@ int SendFile(const char* fileName)
 
     do
     {
-        unsigned long fileBytes = 0;
         fileBytes = ReadTxtFile(sendBuff, sizeof(sendBuff), file2Send);
         if (0 > ret)
         {
@@ -209,6 +253,18 @@ int SendFile(const char* fileName)
 
         ret = SendData(sendBuff, sizeof(sendBuff));
         if (ret < 0) {return -1;}
+
+        // if(0 == (sendNo % 50))
+        // {
+        //     sleep(1);
+        //     ret = RecvACK();
+        //     if(0 > ret)
+        //     {
+        //         fprintf(stderr, "ERROR:\tFiled to get ack from receipient\n");
+        //         return -1;
+        //     }
+        // }
+        ++sendNo;
 
         progress += fileBytes;
         fprintf(stdout, "INFO:\tSent %lu/%lu bytes\n", progress, progressMax);
@@ -237,9 +293,11 @@ int WaitForTransmission()
 {
     FILE* recvdFile = NULL;
     char filename[32] = {0};
-    char recvBuff[128] = {0};
+    char recvBuff[READ_BUFF_SIZE] = {0};
     int ret = -1;
     unsigned long bytesToGo = 0;
+    unsigned long writtenBytes = 0;
+    unsigned recvNo = 0;
 
     if(ToS != NH_TOS_RECEIVER)
     {
@@ -261,12 +319,12 @@ int WaitForTransmission()
     // Second transmission, receive file size
     ret = RecvData(recvBuff, sizeof(recvBuff));
     maxRecvdBytes = atol(recvBuff);
-    bytesToGo = maxRecvdBytes;
+    bytesToGo = 0;
 
     fprintf(stdout, "INFO:\tReceivedd transmission request, file: %s of size: %ld\n", filename, maxRecvdBytes);
     recvdFile = InitFileHandler(filename, FH_MODE_WRITE);
 
-    do
+    while (maxRecvdBytes > bytesToGo)
     {
         ret = RecvData(recvBuff, sizeof(recvBuff));
         if (ret < 0)
@@ -275,16 +333,22 @@ int WaitForTransmission()
             return -1;
         }
 
-        ret = WriteTxtFile(recvBuff, ret, recvdFile);
+        writtenBytes = WriteTxtFile(recvBuff, ret, recvdFile);
         if (ret < 0)
         {
             fprintf(stderr, "ERROR:\tWriting file error, aborting...\n");
             return -1;
         }
-        bytesToGo -= ret;
+        // Confirm that data was received
+        // if (0 == (recvNo % 50))
+            // SendACK();
 
-    } while (bytesToGo > 0);
+        ++recvNo;
+        bytesToGo += writtenBytes;
+        fprintf(stdout, "Written %lu/%lu bytes\n", bytesToGo, maxRecvdBytes);
+    }
 
+    progressMax = maxRecvdBytes;
     Cleanup(recvdFile, sockfd);
     return 0;
 }

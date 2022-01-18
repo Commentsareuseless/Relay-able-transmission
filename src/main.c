@@ -13,14 +13,14 @@ int main(int argc, char** argv)
     ClArgs clArgs = {0};
     struct timeval start = {0}, stop = {0};
 
-    gettimeofday(&start, NULL);
-
     if (0 > ParseCommandLine(argc, argv, &clArgs))
     {
         exit(1);
     }
 
     InitNetHandler(clArgs.typeOfService, clArgs.ipv4Address, clArgs.port);
+
+    gettimeofday(&start, NULL);
 
     switch (clArgs.typeOfService)
     {
